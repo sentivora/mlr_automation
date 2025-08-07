@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversion Complete - Farewell Manual Labor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card border border-secondary rounded-3 shadow">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h1 class="h3 mb-0">
+                                <i data-feather="check-circle" class="me-2 text-success"></i>
+                                Conversion Complete!
+                            </h1>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="themeToggle" title="Toggle theme">
+                                <i data-feather="sun" id="themeIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-success" role="alert">
+                            <i data-feather="info" class="me-2"></i>
+                            Successfully processed {{ folder_count }} folder{{ 's' if folder_count != 1 else '' }} and generated your presentation files.
+                        </div>
+
+                        {% if implement_video_frames and not video_folder_found %}
+                        <div class="alert alert-info" role="alert">
+                            <i data-feather="video" class="me-2"></i>
+                            <strong>Note:</strong> No "video" folder was detected in your files. Video frames slides are only created when a folder containing "video" in its name is found.
+                        </div>
+                        {% endif %}
+
+                        <div class="row mt-4 justify-content-center">
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i data-feather="file-text" class="text-primary mb-3" style="width: 3rem; height: 3rem;"></i>
+                                        <h5 class="card-title">{{ ppt_file }}</h5>
+                                        <p class="card-text text-muted">Fully editable .pptx file</p>
+                                        <a href="{{ url_for('download_file', filename=ppt_file) }}" class="btn btn-primary me-2">
+                            <i data-feather="download" class="me-2"></i>
+                            Download PPT
+                        </a>
+                                        <button onclick="convertToPDF('{{ ppt_file }}')" class="btn btn-outline-danger" id="pdfBtn">
+                                            <i data-feather="file-text" class="me-2"></i>
+                                            Download PDF
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i data-feather="info" class="me-2"></i>
+                                        File Details:
+                                    </h6>
+                                    <ul class="mb-0">
+                                        <li>Number of slides created: {{ slide_count }}</li>
+                                        <li>PowerPoint file: {{ ppt_file }}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                                <i data-feather="upload" class="me-2"></i>
+                                Convert Another File
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+        
+        function convertToPDF(filename) {
+            const pdfBtn = document.getElementById('pdfBtn');
+            const originalText = pdfBtn.innerHTML;
+            
+            // Show loading state
+            pdfBtn.disabled = true;
+            pdfBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Converting...';
+            
+            // Build the conversion URL for local file
+            let convertUrl = `/convert-to-pdf/${filename}`;
+            
+            // Make request to convert to PDF
+            fetch(convertUrl)
+                .then(response => {
+                    if (response.ok) {
+                        return response.blob();
+                    } else {
+                        return response.json().then(data => {
+                            throw new Error(data.error || 'Failed to convert to PDF');
+                        });
+                    }
+                })
+                .then(blob => {
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename.replace('.pptx', '.pdf');
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    // Reset button
+                    pdfBtn.disabled = false;
+                    pdfBtn.innerHTML = originalText;
+                    feather.replace();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(`Failed to convert to PDF: ${error.message}`);
+                    
+                    // Reset button
+                    pdfBtn.disabled = false;
+                    pdfBtn.innerHTML = originalText;
+                    feather.replace();
+                });
+        }
+
+    </script>
+</body>
+</html>
