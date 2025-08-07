@@ -1,7 +1,8 @@
 # TODO:
 
-- [x] vps-1: Strengthen before_request handler to force JSON content-type for ALL API routes (priority: High)
-- [x] vps-2: Enhance after_request handler to ensure application/json for all API responses (priority: High)
-- [x] vps-3: Add global response interceptor for API endpoints (priority: High)
-- [ ] vps-4: Test and commit changes to fix VPS HTML response issue (**IN PROGRESS**) (priority: Medium)
-- [ ] vps-5: Push changes to GitHub repository (priority: Medium)
+- [x] js-1: Add explicit 'Accept: application/json' and 'Content-Type: application/json' headers to fetch request (priority: High)
+- [x] js-2: Add response validation to detect HTML responses before JSON parsing (priority: High)
+- [x] js-3: Implement fallback error handling for HTML responses (priority: High)
+- [x] js-4: Check for web server configurations that might intercept requests (priority: Medium)
+- [x] js-5: Test and commit the JavaScript fixes (priority: Medium)
+- [ ] nginx-1: Apply nginx configuration to prevent HTML error page interception (priority: High)

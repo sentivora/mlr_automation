@@ -129,9 +129,13 @@ function handleFormSubmission() {
                 
                 progressBar.style.width = '20%';
                 
-                // Upload file directly to server
+                // Upload file directly to server with explicit JSON headers
                 const uploadResponse = await fetch('/upload', {
                     method: 'POST',
+                    headers: {
+                        'Accept': 'application/json'
+                        // Note: Don't set Content-Type for FormData, let browser set it with boundary
+                    },
                     body: formData
                 });
                 
@@ -140,15 +144,34 @@ function handleFormSubmission() {
                 if (!uploadResponse.ok) {
                     let errorMessage = 'Upload failed';
                     try {
-                        const error = await uploadResponse.json();
-                        errorMessage = error.error || error.message || 'Upload failed';
+                        // Check if response is HTML before trying to parse as JSON
+                        const contentType = uploadResponse.headers.get('content-type');
+                        if (contentType && contentType.includes('text/html')) {
+                            const htmlText = await uploadResponse.text();
+                            // Extract meaningful error from HTML if possible
+                            const titleMatch = htmlText.match(/<title>(.*?)<\/title>/i);
+                            errorMessage = titleMatch ? titleMatch[1] : `Server returned HTML error (${uploadResponse.status})`;
+                        } else {
+                            const error = await uploadResponse.json();
+                            errorMessage = error.error || error.message || 'Upload failed';
+                        }
                     } catch (parseError) {
-                        // If response is not JSON, use status text
-                        errorMessage = uploadResponse.statusText || 'Upload failed';
+                        // If response parsing fails completely, use status text
+                        errorMessage = uploadResponse.statusText || `HTTP ${uploadResponse.status} error`;
                     }
                     throw new Error(errorMessage);
                 }
-                
+
+                // Validate response is JSON before parsing
+                const contentType = uploadResponse.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const responseText = await uploadResponse.text();
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+                        throw new Error('Server returned HTML instead of JSON. Please check server configuration.');
+                    }
+                    throw new Error('Server returned non-JSON response: ' + contentType);
+                }
+
                 const result = await uploadResponse.json();
                 progressBar.style.width = '100%';
                 
