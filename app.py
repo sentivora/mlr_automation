@@ -126,27 +126,79 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 @app.before_request
 def before_request():
     """Set proper headers for API requests."""
-    # Set JSON content type for API routes
-    if request.path.startswith('/upload') or request.path.startswith('/health') or request.path.startswith('/startup-status') or request.path.startswith('/fallback-info'):
-        if request.method == 'POST' and 'application/json' not in request.content_type:
-            # For file uploads, don't override multipart/form-data
-            if 'multipart/form-data' not in str(request.content_type):
-                logger.info(f"Setting JSON content type for {request.path}")
+    # Define all API routes that should return JSON
+    api_routes = ['/upload', '/health', '/startup-status', '/fallback-info', '/convert-to-pdf', '/download', '/local-file', '/test-upload-flow']
+    
+    # Check if current path is an API route
+    is_api_route = any(request.path.startswith(route) for route in api_routes)
+    
+    if is_api_route:
+        logger.info(f"API route detected: {request.path}")
+        # For POST requests, don't override multipart/form-data for file uploads
+        if request.method == 'POST' and 'multipart/form-data' in str(request.content_type):
+            logger.info(f"Preserving multipart/form-data for file upload: {request.path}")
+        else:
+            logger.info(f"Forcing JSON response for API route: {request.path}")
 
 
 @app.after_request
 def after_request(response):
     """Set proper headers for all responses."""
-    # Ensure JSON responses have correct content type
-    if request.path.startswith('/upload') or request.path.startswith('/health') or request.path.startswith('/startup-status') or request.path.startswith('/fallback-info'):
-        if response.content_type.startswith('text/html'):
-            response.content_type = 'application/json'
-            logger.warning(f"Corrected content type from HTML to JSON for {request.path}")
+    # Define all API routes that should return JSON
+    api_routes = ['/upload', '/health', '/startup-status', '/fallback-info', '/convert-to-pdf', '/download', '/local-file', '/test-upload-flow']
     
-    # Add CORS headers for API routes
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    # Check if current path is an API route
+    is_api_route = any(request.path.startswith(route) for route in api_routes)
+    
+    if is_api_route:
+        # Force JSON content type for all API routes except file downloads
+        if not request.path.startswith('/download') and not request.path.startswith('/local-file'):
+            if not response.content_type.startswith('application/json'):
+                response.content_type = 'application/json; charset=utf-8'
+                logger.warning(f"FORCED content type to JSON for API route: {request.path} (was: {response.content_type})")
+        
+        # Add comprehensive CORS headers for API routes
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Max-Age'] = '86400'
+    
+    return response
+
+
+@app.before_request
+def force_json_for_api():
+    """Additional middleware to force JSON responses for API routes."""
+    api_routes = ['/upload', '/health', '/startup-status', '/fallback-info', '/convert-to-pdf', '/download', '/local-file', '/test-upload-flow']
+    is_api_route = any(request.path.startswith(route) for route in api_routes)
+    
+    if is_api_route:
+        # Set a flag to indicate this is an API request
+        request.is_api_request = True
+        logger.info(f"Marked as API request: {request.path}")
+    else:
+        request.is_api_request = False
+
+
+@app.after_request
+def final_json_check(response):
+    """Final check to ensure API routes return JSON."""
+    if hasattr(request, 'is_api_request') and request.is_api_request:
+        # Skip file download routes
+        if not request.path.startswith('/download') and not request.path.startswith('/local-file'):
+            # If response is HTML, convert to JSON error
+            if response.content_type.startswith('text/html'):
+                logger.error(f"CRITICAL: HTML response detected for API route {request.path}, converting to JSON error")
+                from flask import jsonify
+                error_response = jsonify({
+                    'error': 'Server configuration error',
+                    'message': 'The server returned an HTML response instead of JSON. Please check server configuration.',
+                    'path': request.path,
+                    'original_content_type': response.content_type
+                })
+                error_response.status_code = 500
+                error_response.content_type = 'application/json; charset=utf-8'
+                return error_response
     
     return response
 
@@ -1829,11 +1881,26 @@ def handle_exception(e):
     import traceback
     logger.error(f"Traceback: {traceback.format_exc()}")
     
-    # Return JSON response for all exceptions
-    return jsonify({
-        'error': 'Internal error',
-        'message': 'An unexpected error occurred while processing your request'
-    }), 500
+    # Define all API routes that should return JSON
+    api_routes = ['/upload', '/health', '/startup-status', '/fallback-info', '/convert-to-pdf', '/download', '/local-file', '/test-upload-flow']
+    is_api_route = any(request.path.startswith(route) for route in api_routes)
+    
+    if is_api_route:
+        # Force JSON response for API routes
+        response = jsonify({
+            'error': 'Internal error',
+            'message': 'An unexpected error occurred while processing your request'
+        })
+        response.status_code = 500
+        response.content_type = 'application/json; charset=utf-8'
+        logger.warning(f"FORCED JSON response for API exception on: {request.path}")
+        return response
+    else:
+        # For non-API routes, return standard Flask error handling
+        return jsonify({
+            'error': 'Internal error',
+            'message': 'An unexpected error occurred while processing your request'
+        }), 500
 
 
 if __name__ == '__main__':
