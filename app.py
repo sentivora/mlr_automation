@@ -123,6 +123,34 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 
+@app.before_request
+def before_request():
+    """Set proper headers for API requests."""
+    # Set JSON content type for API routes
+    if request.path.startswith('/upload') or request.path.startswith('/health') or request.path.startswith('/startup-status') or request.path.startswith('/fallback-info'):
+        if request.method == 'POST' and 'application/json' not in request.content_type:
+            # For file uploads, don't override multipart/form-data
+            if 'multipart/form-data' not in str(request.content_type):
+                logger.info(f"Setting JSON content type for {request.path}")
+
+
+@app.after_request
+def after_request(response):
+    """Set proper headers for all responses."""
+    # Ensure JSON responses have correct content type
+    if request.path.startswith('/upload') or request.path.startswith('/health') or request.path.startswith('/startup-status') or request.path.startswith('/fallback-info'):
+        if response.content_type.startswith('text/html'):
+            response.content_type = 'application/json'
+            logger.warning(f"Corrected content type from HTML to JSON for {request.path}")
+    
+    # Add CORS headers for API routes
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    
+    return response
+
+
 def allowed_file(filename):
     """Check if file has allowed extension."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -1729,17 +1757,83 @@ def convert_to_pdf(filename):
         return jsonify({'error': f'PDF conversion error: {str(e)}'}), 500
 
 
+# Comprehensive error handlers to ensure JSON responses
+@app.errorhandler(400)
+def bad_request(e):
+    """Handle bad request errors."""
+    logger.error(f"Bad request: {str(e)}")
+    return jsonify({'error': 'Bad request', 'message': 'Invalid request format or parameters'}), 400
+
+
+@app.errorhandler(401)
+def unauthorized(e):
+    """Handle unauthorized errors."""
+    logger.error(f"Unauthorized access: {str(e)}")
+    return jsonify({'error': 'Unauthorized', 'message': 'Authentication required'}), 401
+
+
+@app.errorhandler(403)
+def forbidden(e):
+    """Handle forbidden errors."""
+    logger.error(f"Forbidden access: {str(e)}")
+    return jsonify({'error': 'Forbidden', 'message': 'Access denied'}), 403
+
+
+@app.errorhandler(404)
+def not_found(e):
+    """Handle not found errors."""
+    logger.error(f"Resource not found: {str(e)}")
+    return jsonify({'error': 'Not found', 'message': 'The requested resource was not found'}), 404
+
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    """Handle method not allowed errors."""
+    logger.error(f"Method not allowed: {str(e)}")
+    return jsonify({'error': 'Method not allowed', 'message': 'The HTTP method is not allowed for this endpoint'}), 405
+
+
 @app.errorhandler(413)
 def too_large(e):
     """Handle file too large error."""
-    return jsonify({'error': 'File too large. Maximum size is 200MB.'}), 413
+    logger.error(f"File too large: {str(e)}")
+    return jsonify({'error': 'File too large', 'message': 'Maximum file size is 200MB'}), 413
 
 
 @app.errorhandler(500)
 def internal_error(e):
     """Handle internal server errors."""
     logger.error(f"Internal server error: {str(e)}")
-    return jsonify({'error': 'Internal server error occurred.'}), 500
+    return jsonify({'error': 'Internal server error', 'message': 'An unexpected error occurred'}), 500
+
+
+@app.errorhandler(502)
+def bad_gateway(e):
+    """Handle bad gateway errors."""
+    logger.error(f"Bad gateway: {str(e)}")
+    return jsonify({'error': 'Bad gateway', 'message': 'Upstream server error'}), 502
+
+
+@app.errorhandler(503)
+def service_unavailable(e):
+    """Handle service unavailable errors."""
+    logger.error(f"Service unavailable: {str(e)}")
+    return jsonify({'error': 'Service unavailable', 'message': 'Service temporarily unavailable'}), 503
+
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Handle all unhandled exceptions with JSON response."""
+    logger.error(f"Unhandled exception: {str(e)}")
+    logger.error(f"Exception type: {type(e)}")
+    import traceback
+    logger.error(f"Traceback: {traceback.format_exc()}")
+    
+    # Return JSON response for all exceptions
+    return jsonify({
+        'error': 'Internal error',
+        'message': 'An unexpected error occurred while processing your request'
+    }), 500
 
 
 if __name__ == '__main__':
