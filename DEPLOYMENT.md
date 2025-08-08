@@ -82,7 +82,7 @@ Add the following configuration:
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com www.your-domain.com;
+    server_name theexperimentai.org www.theexperimentai.org;
     
     # Redirect HTTP to HTTPS
     return 301 https://$server_name$request_uri;
@@ -90,7 +90,7 @@ server {
 
 server {
     listen 443 ssl http2;
-    server_name your-domain.com www.your-domain.com;
+    server_name theexperimentai.org www.theexperimentai.org;
     
     # SSL Configuration
     ssl_certificate /path/to/your/certificate.crt;
@@ -152,7 +152,7 @@ sudo ufw allow 443/tcp
 sudo apt install certbot python3-certbot-nginx
 
 # Get SSL certificate
-sudo certbot --nginx -d your-domain.com -d www.your-domain.com
+sudo certbot --nginx -d theexperimentai.org -d www.theexperimentai.org
 
 # Auto-renewal
 sudo crontab -e

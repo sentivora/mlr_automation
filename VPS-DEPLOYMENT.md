@@ -59,7 +59,7 @@ If using Apache instead of Nginx:
 Create `/etc/apache2/sites-available/mlr-auto.conf`:
 ```apache
 <VirtualHost *:80>
-    ServerName your-domain.com
+    ServerName theexperimentai.org
     DocumentRoot /var/www/html/mlr-auto
     
     # Proxy Flask API requests
@@ -162,7 +162,7 @@ OUTPUT_FOLDER=/var/www/output
 BLOB_READ_WRITE_TOKEN=your-blob-token
 
 # CORS Configuration
-CORS_ORIGINS=https://your-domain.com
+CORS_ORIGINS=https://theexperimentai.org
 
 # Logging
 LOG_LEVEL=INFO
@@ -202,7 +202,7 @@ curl -X POST http://localhost:5000/upload \
 
 ```bash
 # Test through web server
-curl -X POST http://your-domain.com/upload \
+curl -X POST http://theexperimentai.org/upload \
   -H "Content-Type: multipart/form-data" \
   -H "Accept: application/json" \
   -F "file=@test.txt"
@@ -229,10 +229,10 @@ sudo journalctl -u apache2 -f
 
 ```bash
 # Check response headers
-curl -I http://your-domain.com/upload
+curl -I http://theexperimentai.org/upload
 
 # Verbose curl to see full request/response
-curl -v -X POST http://your-domain.com/upload \
+curl -v -X POST http://theexperimentai.org/upload \
   -H "Accept: application/json" \
   -F "file=@test.txt"
 ```
@@ -264,7 +264,7 @@ curl -v -X POST http://your-domain.com/upload \
 
 1. **Test File Upload**:
    ```bash
-   curl -X POST http://your-domain.com/upload \
+   curl -X POST http://theexperimentai.org/upload \
      -H "Accept: application/json" \
      -F "file=@sample.txt"
    ```
@@ -272,7 +272,7 @@ curl -v -X POST http://your-domain.com/upload \
 2. **Test Error Handling**:
    ```bash
    # Test with invalid file
-   curl -X POST http://your-domain.com/upload \
+   curl -X POST http://theexperimentai.org/upload \
      -H "Accept: application/json" \
      -F "file=@invalid.xyz"
    ```
@@ -295,7 +295,7 @@ curl -v -X POST http://your-domain.com/upload \
 2. **SSL/HTTPS Setup**:
    ```bash
    sudo apt install certbot python3-certbot-nginx
-   sudo certbot --nginx -d your-domain.com
+   sudo certbot --nginx -d theexperimentai.org
    ```
 
 3. **File Upload Security**:

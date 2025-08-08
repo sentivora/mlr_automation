@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # Configuration variables
 APP_NAME="mlr-auto"
 APP_DIR="/var/www/html/$APP_NAME"
-DOMAIN="your-domain.com"  # Change this to your actual domain
+DOMAIN="theexperimentai.org"  # MLR Auto Phase-01 domain
 FLASK_PORT="5000"
 NGINX_AVAILABLE="/etc/nginx/sites-available"
 NGINX_ENABLED="/etc/nginx/sites-enabled"
