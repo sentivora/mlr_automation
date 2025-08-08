@@ -1,7 +1,7 @@
 {
   "name": "mlr-auto-phase-01",
   "version": "1.0.0",
-  "description": "PowerPoint to PDF conversion with VPM storage",
+  "description": "PowerPoint to PDF conversion with VPS Storage",
   "main": "app.py",
   "scripts": {
     "dev": "python app.py",

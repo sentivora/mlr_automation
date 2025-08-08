@@ -3,7 +3,7 @@ feather.replace();
 
 // Show file size error with user-friendly message
 function showFileSizeError(actualSize) {
-    const errorMessage = `File size (${actualSize} MB) exceeds the 200 MB limit for VPM storage. Please choose a smaller file or compress your archive.`;
+    const errorMessage = `File size (${actualSize} MB) exceeds the 200 MB limit for VPS Storage. Please choose a smaller file or compress your archive.`;
     
     // Create or update error alert
     let existingAlert = document.querySelector('.file-size-error');
@@ -29,7 +29,7 @@ function showFileSizeError(actualSize) {
 
 // Show current file size info
 function showFileSizeInfo(fileName, fileSize) {
-    const maxSize = 200; // Updated to 200MB for VPM storage
+    const maxSize = 200; // Updated to 200MB for VPS Storage
     const sizePercentage = (fileSize / maxSize) * 100;
     
     // Remove existing info
@@ -51,7 +51,7 @@ function showFileSizeInfo(fileName, fileSize) {
         <div class="progress" style="height: 8px;">
             <div class="progress-bar ${progressColor}" role="progressbar" style="width: ${Math.min(sizePercentage, 100)}%"></div>
         </div>
-        <small class="text-muted"><i data-feather="info" class="me-1"></i>Files are stored securely in VPM storage</small>
+        <small class="text-muted"><i data-feather="info" class="me-1"></i>Files are stored securely in VPS Storage</small>
     `;
     
     // Insert after the file input
@@ -73,7 +73,7 @@ function handleFileInput() {
         const fileName = file.name;
         const fileSize = (file.size / (1024 * 1024)).toFixed(2);
         
-        // Validate file size (200MB limit for VPM storage)
+        // Validate file size (200MB limit for VPS Storage)
         const maxSizeBytes = 200 * 1024 * 1024; // 200MB in bytes
         if (file.size > maxSizeBytes) {
             showFileSizeError(fileSize);
